@@ -4,7 +4,7 @@
 * Each folder `01`, `02`, etc. is a different project.  
 
 ---
-## 01 - SEC 10‑K filings 🏛️
+## 📂 01 - SEC 10‑K filings RAG System 🏛️
 - **Project Overview:** An end-to-end Retrieval-Augmented Generation (RAG) system for querying SEC 10‑K filings. 
 - **Dataset:** 🔗 [S&P 500 EDGAR 10-K (Hugging Face)](https://huggingface.co/datasets/jlohding/sp500-edgar-10k)
     - Original filings from SEC EDGAR; mirrored on Hugging Face for research use.
@@ -28,6 +28,32 @@
     - Tiny LLM (Qwen 0.5B) → basic reasoning only; answers strictly from context.
 ---
 
+## 📂 02 - Biomedical PubMed RAG Assistant 🧬  
+- **Project Overview:**  
+  A Retrieval-Augmented Generation (RAG) system that automatically retrieves biomedical research from PubMed based on a topic (e.g., *plasma metanephrines*), downloads abstracts, chunks and embeds them, builds a **FAISS** vector store, and answers domain-specific biomedical queries grounded in real literature.
 
+- **Data Source:** 🔗 [PubMed E-Utilities API ](https://www.ncbi.nlm.nih.gov/home/develop/api/)
+  - Articles retrieved programmatically via `esearch` + `efetch`.  
+  - Abstracts parsed from XML and stored locally with metadata (PMID, source URL).
 
+- **Parts:**  
+  - **`RAG_PubMed_Pipeline.py`** - End-to-end script that:
+    - Queries PubMed API  
+    - Downloads/Stores abstracts  
+    - Splits content → embeddings → **FAISS VectorDB**  
+    - Runs a RAG pipeline using `ChatOpenAI` + LangChain retrieval  
+    - Optionally visualizes embeddings using **PCA** in 3D or 4D
+  - **`pubmed_abstracts/`** - Folder containing normalized article text files organized by search topic.
+  - **`vectorstore_db/`** - Local FAISS vector store persisted to disk.
 
+- **Repo Layout:**
+```
+02/
+├── RAG_PubMed_Pipeline.py
+├── pubmed_abstracts/
+│ └── plasma metanephrine/
+│ └── pmid_*.txt
+└── vectorstore_db/
+└── index.faiss + metadata
+```
+- **Limitations (by design):** I could only get access to the abstracts of research papers in PubMed.  Full-text access to articles varies by journal licensing, so some responses may lack deeper context available only in complete articles.  I only asked it questions that I knew came from the abstracts.  
