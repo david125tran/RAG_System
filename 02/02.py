@@ -1,8 +1,11 @@
 # ------------------------------------ Imports ----------------------------------
 from dotenv import load_dotenv
-from langchain_community.document_loaders import TextLoader
+from langchain_classic.chains.combine_documents import create_stuff_documents_chain
+from langchain_classic.chains.retrieval import create_retrieval_chain
+from langchain_community.document_loaders.text import TextLoader
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 import numpy as np
@@ -25,6 +28,9 @@ PUBMED_SEARCH = "plasma metanephrine"
 # Create a directory for files we download
 output_dir = Path(script_dir) / "pubmed_abstracts" / PUBMED_SEARCH
 output_dir.mkdir(parents=True, exist_ok=True)
+
+# AI Model
+MODEL = "gpt-4o-mini"
 
 
 # ------------------------------------ Configure API Keys / Tokens ----------------------------------
@@ -267,32 +273,111 @@ print(f"✅ Saved FAISS index to: {faiss_vector_store}")
 # plt.show()
 
 
-# --------------------------- 4D Visualization (Color Encoded) ---------------------------
-print_banner("4D PCA Visualization (3D Scatter + Color)")
+# # --------------------------- 4D Visualization (Color Encoded) ---------------------------
+# print_banner("4D PCA Visualization (3D Scatter + Color)")
 
-texts = [c.page_content for c in chunks]
-X = np.array(embeddings.embed_documents(texts))
+# texts = [c.page_content for c in chunks]
+# X = np.array(embeddings.embed_documents(texts))
 
-# Reduce to 4D
-pca = PCA(n_components=4)
-X_4d = pca.fit_transform(X)
+# # Reduce to 4D
+# pca = PCA(n_components=4)
+# X_4d = pca.fit_transform(X)
 
-# First 3 dimensions → axes
-x, y, z = X_4d[:, 0], X_4d[:, 1], X_4d[:, 2]
-# Fourth dimension → color scale
-c = X_4d[:, 3]
+# # First 3 dimensions → axes
+# x, y, z = X_4d[:, 0], X_4d[:, 1], X_4d[:, 2]
+# # Fourth dimension → color scale
+# c = X_4d[:, 3]
 
-fig = plt.figure(figsize=(10, 8))
-ax = fig.add_subplot(111, projection="3d")
+# fig = plt.figure(figsize=(10, 8))
+# ax = fig.add_subplot(111, projection="3d")
 
-scatter = ax.scatter(x, y, z, c=c, cmap="viridis", s=50)
+# scatter = ax.scatter(x, y, z, c=c, cmap="viridis", s=50)
 
-# Add color bar to show 4th dimension
-cbar = plt.colorbar(scatter, label="4th PCA Dimension Value")
+# # Add color bar to show 4th dimension
+# cbar = plt.colorbar(scatter, label="4th PCA Dimension Value")
 
-ax.set_title("PubMed Embedding Visualization (4D Encoded in Color)")
-ax.set_xlabel("PC1")
-ax.set_ylabel("PC2")
-ax.set_zlabel("PC3")
+# ax.set_title("PubMed Embedding Visualization (4D Encoded in Color)")
+# ax.set_xlabel("PC1")
+# ax.set_ylabel("PC2")
+# ax.set_zlabel("PC3")
 
-plt.show()
+# plt.show()
+
+
+
+# ------------------------------------ Testing the LLM Integration with RAG ----------------------------------
+print_banner("Testing the LLM Integration with RAG")
+
+# Create a new Chat with OpenAI
+llm = ChatOpenAI(model=MODEL, temperature=0.3)
+
+# The retriever's role is to fetch relevant chunks of information from the vector store
+retriever = vectorstore.as_retriever(search_kwargs={"k": 5})
+
+system_prompt = """
+You are a helpful assistant that answers questions about the library of medicine given abstracts from research papers
+Use ONLY the following context to answer. If the answer is not in the context, say you don't know.
+"""
+
+
+# Prompt template: how the LLM should use retrieved context
+prompt = ChatPromptTemplate.from_messages([
+    (
+        "system", 
+        system_prompt
+    ),
+    (
+        "human",
+        "Question: {input}\n\nContext:\n{context}"
+    ),
+])
+
+# Chain that stuffs retrieved docs into the prompt
+qa_chain = create_stuff_documents_chain(llm, prompt)
+
+# Full RAG chain: retrieval + question answering
+rag_chain = create_retrieval_chain(retriever, qa_chain)
+
+query = "What laboratory metabolites are measured by the South African National Health Laboratory Service (NHLS) for catecholamine-secreting tumors?"
+result = rag_chain.invoke({"input": query})
+
+
+print("\n --- RAG Question ---")
+print(system_prompt)
+print(f"Question\n\n{query}")
+
+print("\n--- RAG Answer ---")
+print(result["answer"])
+
+print("\n--- Sources ---")
+for doc in result["context"]:
+    print(f"PMID: {doc.metadata.get('pmid')}, URL: {doc.metadata.get('pubmed_url')}")
+
+
+
+
+
+#  --- RAG Question ---
+
+# You are a helpful assistant that answers questions about the library of medicine given abstracts from research papers
+# Use ONLY the following context to answer. If the answer is not in the context, say you don't know.
+
+# Question
+
+# What laboratory metabolites are measured by the South African National Health Laboratory Service (NHLS) for catecholamine-secreting tumors?
+
+# --- RAG Answer ---
+# The South African National Health Laboratory Service (NHLS) measures the following laboratory metabolites for catecholamine-secreting tumors:
+
+# 1. Urine fractionated metanephrines (UMF)
+# 2. Normetanephrines (UNF)
+# 3. Urine vanillylmandelic acid (UVMA)
+# 4. Urine homovanillic acid (UHVA)
+
+# --- Sources ---
+# PMID: 39968348, URL: https://pubmed.ncbi.nlm.nih.gov/39968348/
+# PMID: 41097269, URL: https://pubmed.ncbi.nlm.nih.gov/41097269/
+# PMID: 40089283, URL: https://pubmed.ncbi.nlm.nih.gov/40089283/
+# PMID: 40237721, URL: https://pubmed.ncbi.nlm.nih.gov/40237721/
+# PMID: 39968348, URL: https://pubmed.ncbi.nlm.nih.gov/39968348/
+# 4. Urine homovanillic acid (UHVA)
