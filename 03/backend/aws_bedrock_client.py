@@ -2,6 +2,7 @@
 
 import asyncio
 import boto3
+from dataclasses import dataclass
 import os
 import re
 from typing import Optional, List, Dict, Any
@@ -30,6 +31,17 @@ def sanitize_model_output(text: str) -> str:
 
 
 # ---------------------------------- AWS Bedrock Client ----------------------------------
+@dataclass
+class BedrockChatResult:
+    reply: str
+    input_tokens: Optional[int] = None
+    output_tokens: Optional[int] = None
+    total_tokens: Optional[int] = None
+    stop_reason: Optional[str] = None
+    model_id: Optional[str] = None
+    raw_response: Optional[Dict[str, Any]] = None
+
+
 class BedrockClient:
   """
   Thin async wrapper around the Amazon Bedrock Runtime `converse` API
@@ -80,7 +92,7 @@ class BedrockClient:
     max_tokens: int = 2048,
     temperature: float = 0.2,
     tools: Optional[List[Dict[str, Any]]] = None,
-  ) -> str:
+  ) -> BedrockChatResult:
     """
     Synchronous call to Bedrock Converse, returns assistant text.
     """
@@ -153,7 +165,24 @@ class BedrockClient:
 
     raw = "".join(text_chunks).strip()
     safe = sanitize_model_output(raw)
-    return safe
+
+    usage = response.get("usage", {}) or {}
+    input_tokens = usage.get("inputTokens")
+    output_tokens = usage.get("outputTokens")
+    total_tokens = usage.get("totalTokens")
+
+    stop_reason = response.get("stopReason") or response.get("stop_reason")
+    model_id = response.get("modelId") or kwargs.get("modelId")
+
+    return BedrockChatResult(
+      reply=safe,
+      input_tokens=input_tokens,
+      output_tokens=output_tokens,
+      total_tokens=total_tokens,
+      stop_reason=stop_reason,
+      model_id=model_id,
+      raw_response=None,  # set to response if you want
+    )
 
   # ---------- Public async helper used by pipelines ----------
   async def chat(
@@ -166,7 +195,7 @@ class BedrockClient:
     max_tokens: int = 2048,
     temperature: float = 0.2,
     tools: Optional[List[Dict[str, Any]]] = None,
-  ) -> str:
+  ) -> BedrockChatResult:
     """
     Async wrapper around _converse_sync so you can `await` it
     from FastAPI / any async code.
