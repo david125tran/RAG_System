@@ -57,3 +57,72 @@
 └── index.faiss + metadata
 ```
 - **Limitations (by design):** I could only get access to the abstracts of research papers in PubMed.  Full-text access to articles varies by journal licensing, so some responses may lack deeper context available only in complete articles.  I only asked it questions that I knew came from the abstracts.  
+
+---
+## 📂 03 – Infectious Disease RAG Assistant 🦠
+
+- **Project Overview:**  
+  A production-style Retrieval-Augmented Generation (RAG) chat assistant focused on **infectious diseases**, built with a full frontend + backend architecture.  This system combines domain-specific RAG with a **semantic LLM response cache**, **allowing first-turn user questions that are semantically similar to reuse previously generated LLM responses** across users to explore cost savings with messaging LLMs on a large scale.
+
+  This project emphasizes **real-world engineering concerns**: prompt-injection defense, response caching, usage logging, persistence, and UI/backend coordination.
+- **Parts:**  
+    - Domain-specific RAG - Retrieves infectious-disease context from a FAISS vector store
+    - Semantic LLM Response Cache (MySQL + FAISS)
+        - Exact-hash cache for repeated first-turn queries  
+        - Cache usage is intentionally limited to **first-turn queries** to **avoid context-dependent cache poisoning**
+        - Semantic cache using cosine similarity over normalized embeddings  
+        - Prevents redundant LLM calls for semantically identical questions  
+    - Prompt-Injection & Input Hardening
+    - Async FastAPI backend orchestrating RAG, caching, and LLM calls  
+    - Integration with Amazon Bedrock via async `converse` calls 
+    - React-based chat UI
+- **Repo Layout:**
+```
+infectious-disease-chat/
+│
+├── start-frontend.bat                                   # Launch React UI (npm start / vite / etc.)
+├── start-backend.bat                                    # Launch FastAPI backend (uvicorn backend.main:app)
+│
+├── rag pipeline/
+│   │
+│   ├── knowledge base/
+│   │   └── *.txt, *.md, *.pdf, *.docx, *.html, *.htm    # Raw infectious disease reference documents
+│   │
+│   ├── vectorstore_db/
+│   │   ├── index.faiss                                  # FAISS vector index
+│   │   └── index.pkl                                    # Serialized metadata
+│   │
+│   └── vectorstore_builder.py                           # Script to embed documents & build FAISS DB
+│
+├── backend/
+│   │
+│   ├── main.py                                          # FastAPI entry point (POST /api/chat)
+│   ├── aws_bedrock_client.py                            # Async AWS Bedrock chat wrapper
+│   ├── validate_input.py                                # Prompt-injection & safety validation
+│   │
+│   ├── .env                                             # Environment variables:
+│   │                                                     #  - AWS_ACCESS_KEY_ID
+│   │                                                     #  - AWS_SECRET_ACCESS_KEY
+│   │                                                     #  - OPENAI_API_KEY
+│   │                                                     #  - BASE_MODEL
+│   │                                                     #  - DB_USER / DB_PW / DB_DATABASE_NAME
+│   │
+│   └── __pycache__/                                     # Python bytecode cache
+│
+├── frontend/
+│   │
+│   ├── package.json                                     # Frontend dependencies & scripts
+│   ├── node_modules/
+│   │
+│   ├── public/
+│   │   ├── index.html                                   # HTML shell
+│   │   └── avatar.png                                   # Assistant avatar
+│   │
+│   └── src/
+│       ├── App.js                                       # Main chat UI (state, API calls, history)
+│       ├── App.css                                      # Chat UI styling
+│       ├── index.js                                     # React entry point → App
+│       └── index.css                                    # Global styles (resets, fonts)
+│
+└── directory.md                                         # Project directory overview (this file)
+```
