@@ -94,7 +94,7 @@
 
 - **Repo Layout:**
 ```
-infectious-disease-chat/
+03/
 │
 ├── start-frontend.bat                                   # Launch React UI (npm start / vite / etc.)
 ├── start-backend.bat                                    # Launch FastAPI backend (uvicorn backend.main:app)
