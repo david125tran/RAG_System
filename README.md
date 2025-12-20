@@ -59,7 +59,7 @@
 - **Limitations (by design):** I could only get access to the abstracts of research papers in PubMed.  Full-text access to articles varies by journal licensing, so some responses may lack deeper context available only in complete articles.  I only asked it questions that I knew came from the abstracts.  
 
 ---
-## 📂 03 – Infectious Disease RAG Assistant 🦠
+## 📂 03 - Infectious Disease RAG Assistant 🦠
 
 - **Project Overview:**  
   A production-style Retrieval-Augmented Generation (RAG) chat assistant focused on **infectious diseases**, built with a full frontend + backend architecture.  This system combines domain-specific RAG with a **semantic LLM response cache**, **allowing first-turn user questions that are semantically similar to reuse previously generated LLM responses** across users to explore cost savings with messaging LLMs on a large scale.
