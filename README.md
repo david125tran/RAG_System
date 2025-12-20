@@ -76,6 +76,22 @@
     - Async FastAPI backend orchestrating RAG, caching, and LLM calls  
     - Integration with Amazon Bedrock via async `converse` calls 
     - React-based chat UI
+- **Semantic Response Reuse (First-Turn Queries)**
+    - The screenshot below illustrates how semantically similar first-turn questions can produce identical responses without requiring a new LLM invocation.  
+    - When a user submits an initial question that is sufficiently similar (by cosine similarity over embeddings) to a previously asked question, the system returns a cached response rather than calling the LLM again.  
+    - This behavior reduces inference cost while preserving correctness.  
+    - The 2nd question is semantically similar enough from the first question to use a recycled LLM response.  However, the 3rd question is just semantically different enough to message the model.  
+- **Semantic cache tuning knobs**
+    - `CACHE_SIMILARITY_THRESHOLD` (default `0.90`): minimum cosine similarity required to reuse a prior response (higher = safer, lower = more aggressive caching).
+    - `CACHE_TOP_K` (default `5`): number of nearest cached queries considered.
+
+<p align="center">
+  <img src="https://github.com/david125tran/RAG_System/blob/main/03/UI_01.png?raw=true" width="800" />
+</p>
+
+*Example chat demonstrating identical responses for semantically equivalent first-turn questions, enabled by the semantic response cache.*
+
+
 - **Repo Layout:**
 ```
 infectious-disease-chat/
