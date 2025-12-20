@@ -69,7 +69,7 @@
     - Domain-specific RAG - Retrieves infectious-disease context from a FAISS vector store
     - Semantic LLM Response Cache (MySQL + FAISS)
         - Exact-hash cache for repeated first-turn queries  
-        - Cache usage is intentionally limited to **first-turn queries** to **avoid context-dependent cache poisoning**
+        - Cache usage is **intentionally limited to first-turn queries** to **avoid applying cached responses in contexts where prior conversation state could change the correct answer**.
         - Semantic cache using cosine similarity over normalized embeddings  
         - Prevents redundant LLM calls for semantically identical questions  
     - Prompt-Injection & Input Hardening
