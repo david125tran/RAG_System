@@ -1,6 +1,6 @@
 # 📚 Retrieval-Augmented Generation (RAG) Systems 🧪
 ## About
-* This repo is a sandbox for different RAG System projects.  
+* This repository documents progressive RAG system implementations, evolving from experimental prototypes to production-style architectures.
 * Each folder `01`, `02`, etc. is a different project.  
 
 ---
