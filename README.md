@@ -72,7 +72,7 @@
         - Cache usage is **intentionally limited to first-turn queries** to **avoid applying cached responses in contexts where prior conversation state could change the correct answer**.
         - Semantic cache using cosine similarity over normalized embeddings  
         - Prevents redundant LLM calls for semantically identical questions  
-        - For the caching system, I normalize the query to eliminate trivial variance, then hash it with SHA-256 and store the 32-byte digest as a binary indexed column. Using a fixed-length hash key avoids expensive string comparisons on TEXT fields and provides deterministic, index-friendly lookups for exact-match cache hits.
+        - For the caching system, I normalize the query (lowercase + collapse whitespace) to eliminate trivial variance, then hash it with SHA-256 and store the 32-byte digest as a binary indexed column. Using a fixed-length hash key avoids expensive string comparisons on TEXT fields and provides deterministic, index-friendly lookups for exact-match cache hits.
     - Prompt-Injection & Input Hardening
     - Async FastAPI backend orchestrating RAG, caching, and LLM calls  
     - Integration with Amazon Bedrock via async `converse` calls 
